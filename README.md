@@ -179,10 +179,13 @@ migraciones `20260908_0004` (contacto institucional y recepción de certificados
 ```bash
 pytest
 ruff check .
-pip-audit -r requirements.txt
+pip-audit -r requirements.txt --ignore-vuln PYSEC-2026-217
 ```
 
 ## Operación
+
+La excepción puntual de auditoría corresponde a la biblioteca nativa Connector/C, cuya versión
+corregida se exige al construir Docker. Ver la justificación en `docs/COOLIFY.md`.
 
 - `/health/live` verifica el proceso.
 - `/health/ready` verifica MariaDB, Redis y MinIO.

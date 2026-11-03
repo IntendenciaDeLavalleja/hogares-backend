@@ -91,6 +91,26 @@ diariamente. Los contenedores no necesitan persistir archivos locales; los datos
 
 ## Referencias
 
+### Verificación de MariaDB Connector/C
+
+El aviso `PYSEC-2026-217` aplica los rangos 3.x de Connector/C al paquete PyPI `mariadb` 1.x,
+por lo que `pip-audit` lo informa incluso cuando la biblioteca nativa instalada está corregida.
+La vulnerabilidad original afecta al escape de cadenas Big5 en Connector/C; no se resuelve
+cambiando el número de versión del paquete Python.
+
+El Dockerfile exige `libmariadb-dev` y `libmariadb3` de Debian Bookworm en versión
+`1:10.11.18-0+deb12u1` o posterior, donde Debian confirma la corrección. Si el repositorio
+del sistema ofrece una versión anterior, el build falla. CI también comprueba que la imagen
+final carga el driver nativo. La auditoría Python exceptúa únicamente `PYSEC-2026-217`;
+el resto de los avisos sigue haciendo fallar la comprobación.
+
+Fuera de esta imagen, verificar y actualizar Connector/C por separado: versiones corregidas
+3.3.19/3.4.9 o los paquetes con el parche aplicado por la distribución. Las wheels de Windows
+pueden incluir otra versión nativa y no quedan cubiertas por la verificación de Debian.
+
+- [Aviso original de MariaDB sobre Connector/C](https://github.com/MariaDB/server/security/advisories/GHSA-pv9p-5w55-55jm).
+- [Versiones corregidas en Debian](https://security-tracker.debian.org/tracker/CVE-2026-44172).
+
 - [Dockerfile en Coolify](https://coolify.io/docs/applications/builds/dockerfile).
 - [Variables y alcance build/runtime](https://coolify.io/docs/applications/configuration/environment-variables).
 - [Variables compiladas de Vite](https://vite.dev/guide/env-and-mode.html).
