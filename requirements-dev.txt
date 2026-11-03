@@ -1,0 +1,6 @@
+-r requirements.txt
+pip-audit==2.10.0
+pytest==9.0.3
+pytest-cov==7.0.0
+ruff==0.15.4
+filelock==4.2.1

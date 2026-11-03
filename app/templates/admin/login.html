@@ -1,0 +1,13 @@
+{% extends 'admin/base.html' %}
+{% block title %}Iniciar sesión{% endblock %}
+{% block content %}
+<div class="auth-heading"><span class="brand-icon">H</span><h1>Hogares Estudiantiles</h1><p>Panel de administración</p></div>
+<form method="post" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Correo electrónico<input type="email" name="email" value="{{ request.form.get('email', '') }}" required autocomplete="username" maxlength="150" autofocus></label>
+  <label>Contraseña<input type="password" name="password" required autocomplete="current-password"></label>
+  <label>Verificación de seguridad: {{ session.captcha_question }} = ?<input type="number" name="captcha" required autocomplete="off"></label>
+  <button>Continuar</button>
+</form>
+<p class="hint">Te enviaremos un código de verificación a tu correo.</p>
+{% endblock %}

@@ -1,0 +1,4 @@
+{% extends 'admin/base.html' %}
+{% block title %}Contacto institucional{% endblock %}
+{% block content %}<h1>Contacto institucional</h1><p class="subtitle">Correo que se muestra para la recepción del certificado de buena conducta.</p>
+<form method="post" class="card detail stack narrow"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Correo institucional<input type="email" name="good_conduct_email" maxlength="254" required value="{{ request.form.get('good_conduct_email', settings.good_conduct_email if settings else '') }}"></label><p>El Ministerio del Interior debe enviarlo directamente a esta institución. El postulante no debe adjuntarlo al formulario.</p><button>Guardar correo</button></form>{% endblock %}

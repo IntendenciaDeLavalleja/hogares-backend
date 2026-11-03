@@ -1,0 +1,61 @@
+{% if ranking %}
+<section class="card">
+  <div class="section-heading">
+    <h2>Ranking ponderado</h2>
+    <span>{{ rankable_count }} {{ 'solicitud ponderable' if rankable_count == 1 else 'solicitudes ponderables' }} · {{ '%.2f'|format(income_weight) }}% ingreso / {{ '%.2f'|format(schooling_weight) }}% escolaridad · <a href="{{ url_for('admin.ponderador') }}">Configurar ponderador</a></span>
+  </div>
+  <div class="table-wrap">
+    <table class="ponderador-table">
+      <thead><tr>
+        <th>Posición</th><th>Código / aspirante</th><th>Hogar</th><th>Tipo</th><th>Año</th><th>Inscripción (UTC)</th>
+        <th>Ingreso mensual conviviente</th><th>Promedio de escolaridad</th>
+        <th>Puntaje ingreso</th><th>Puntaje escolaridad</th><th>Puntaje ponderado</th>
+      </tr></thead>
+      <tbody>
+      {% for row in ranking %}<tr>
+        <td><span class="rank-position">{{ row.position }}</span></td>
+        <td><a href="{{ url_for('admin.application_detail', application_id=row.item.id) }}">{{ row.item.tracking_code or 'Sin código' }}</a><small>{{ row.name }}</small></td>
+        <td>{{ (row.item.home or 'Sin hogar')|capitalize }}</td>
+        <td>{{ {'new': 'Primera inscripción', 'renewal': 'Renovación'}.get(row.item.application_type, 'Sin definir') }}</td>
+        <td>{{ row.item.application_year }}</td>
+        <td>{{ row.item.submitted_at.strftime('%d/%m/%Y') if row.item.submitted_at else 'Sin fecha' }}</td>
+        <td>{{ '$ %.2f'|format(row.income_per_person) }}<small>{{ row.residents }} {{ 'persona en el hogar' if row.residents == 1 else 'personas en el hogar' }}</small></td>
+        <td>{{ '%.2f'|format(row.average) }}</td>
+        <td>{{ '%.2f'|format(row.income_score) }}</td>
+        <td>{{ '%.2f'|format(row.schooling_score) }}</td>
+        <td><strong class="weighted-score">{{ '%.2f'|format(row.weighted_score) }}</strong></td>
+      </tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p class="muted ranking-note">El CSV de este ranking respeta los filtros seleccionados. Las solicitudes sin datos completos no se incluyen y se listan aparte.</p>
+</section>
+{% else %}
+<div class="card empty">No hay solicitudes con ingreso por persona y promedio de escolaridad completos para los filtros seleccionados.</div>
+{% endif %}
+
+{% if excluded %}
+<section class="card">
+  <div class="section-heading">
+    <h2>Solicitudes no ponderables</h2>
+    <span>{{ excluded_count }} {{ 'solicitud' if excluded_count == 1 else 'solicitudes' }} sin datos completos</span>
+  </div>
+  <p class="muted ranking-note">No se incluyen en el ranking porque falta el ingreso por persona, el promedio de escolaridad o la composición del hogar. No se infieren ceros.</p>
+  <div class="table-wrap">
+    <table class="ponderador-excluded-table">
+      <thead><tr><th>Código / aspirante</th><th>Hogar</th><th>Tipo</th><th>Año</th><th>Ingreso mensual conviviente</th><th>Promedio de escolaridad</th><th>Motivo</th></tr></thead>
+      <tbody>
+      {% for row in excluded %}<tr>
+        <td><a href="{{ url_for('admin.application_detail', application_id=row.item.id) }}">{{ row.item.tracking_code or 'Sin código' }}</a><small>{{ row.name }}</small></td>
+        <td>{{ (row.item.home or 'Sin hogar')|capitalize }}</td>
+        <td>{{ {'new': 'Primera inscripción', 'renewal': 'Renovación'}.get(row.item.application_type, 'Sin definir') }}</td>
+        <td>{{ row.item.application_year }}</td>
+        <td>{{ '$ %.2f'|format(row.income_per_person) if row.income_per_person is not none else 'Incompleto' }}</td>
+        <td>{{ '%.2f'|format(row.average) if row.average is not none else 'Sin informar' }}</td>
+        <td>{{ row.reason }}</td>
+      </tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endif %}

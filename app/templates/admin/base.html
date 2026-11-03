@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Administración{% endblock %} · Hogares Estudiantiles</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='admin.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+</head>
+<body class="{% if not admin_user %}auth{% endif %}">
+{% if admin_user %}
+<aside class="sidebar">
+  <a class="brand" href="{{ url_for('admin.dashboard') }}"><span class="brand-icon">H</span><span>Hogares Estudiantiles<small>Panel de administración</small></span></a>
+  <p class="nav-label">Gestión</p>
+  <nav aria-label="Administración">
+  {% for endpoint, label in [('dashboard', 'Resumen'), ('applications', 'Solicitudes'), ('comparison', 'Comparación'), ('ponderador', 'Ponderador'), ('archived', 'Archivados'), ('password', 'Mi contraseña')] %}
+    <a {% if request.endpoint == 'admin.' + endpoint or endpoint == 'applications' and request.endpoint == 'admin.application_detail' %}aria-current="page"{% endif %} href="{{ url_for('admin.' + endpoint) }}">{{ label }}</a>
+  {% endfor %}
+  {% if admin_user.is_super_admin %}
+    <p class="nav-label">Superadministración</p>
+    <a href="{{ url_for('admin.settings') }}" {% if request.endpoint == 'admin.settings' %}aria-current="page"{% endif %}>Contacto institucional</a>
+    <a href="{{ url_for('admin.users') }}" {% if request.endpoint == 'admin.users' %}aria-current="page"{% endif %}>Usuarios</a>
+    <a href="{{ url_for('admin.logs') }}" {% if request.endpoint == 'admin.logs' %}aria-current="page"{% endif %}>Registro de actividad</a>
+  {% endif %}
+  </nav>
+  <div class="account"><strong>{{ admin_user.name }}</strong><small>{{ 'Superadministrador' if admin_user.is_super_admin else 'Administrador' }}</small>
+    <form method="post" action="{{ url_for('admin.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="logout">Cerrar sesión</button></form>
+  </div>
+</aside>
+{% endif %}
+<main id="main">
+  {% if admin_user %}<header class="topbar">Intendencia de Lavalleja <span>Hogares Estudiantiles</span></header>{% endif %}
+  <div class="{% if admin_user %}content{% else %}auth-card{% endif %}">
+    {% for category, message in get_flashed_messages(with_categories=true) %}<p role="alert" class="notice {{ category }}">{{ message }}</p>{% endfor %}
+    {% block content %}{% endblock %}
+  </div>
+</main>
+</body>
+</html>

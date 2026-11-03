@@ -1,0 +1,36 @@
+{% extends 'admin/base.html' %}
+{% block title %}Solicitudes{% endblock %}
+{% block content %}
+<h1>Solicitudes</h1><p class="subtitle">Consultá los formularios y su documentación adjunta. Para archivar una convocatoria, seleccioná solicitudes enviadas y usá el panel al final de la lista.</p>
+<form class="filters" method="get">
+  <label>Código de seguimiento<input name="q" value="{{ request.args.get('q', '') }}" maxlength="24" placeholder="Buscar código"></label>
+  <label>Estado<select name="status">{% for value, label in [('', 'Todos'), ('submitted', 'Enviadas'), ('draft', 'Borradores')] %}<option value="{{ value }}" {% if request.args.get('status', '') == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <label>Hogar<select name="home">{% for value, label in [('', 'Todos'), ('minas', 'Minas'), ('mariscala', 'Mariscala'), ('montevideo', 'Montevideo')] %}<option value="{{ value }}" {% if request.args.get('home', '') == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  {% include 'admin/_cohort_filters.html' %}
+  <label>Inscripción desde (UTC)<input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}"></label>
+  <label>Inscripción hasta (UTC)<input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}"></label>
+  <button>Filtrar</button><a href="{{ url_for('admin.applications') }}">Limpiar</a>
+</form>
+<p class="muted">La fecha de inscripción corresponde al envío de la solicitud (UTC). Los borradores no tienen fecha de inscripción.</p>
+<p><a class="action-link" href="{{ url_for('admin.applications_csv', **request.args.to_dict()) }}">Descargar CSV de todos los resultados filtrados</a></p>
+<form method="post" action="{{ url_for('admin.archive_applications', **request.args.to_dict(flat=False)) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <section class="card">
+    {% set selectable = true %}
+    {% include 'admin/_applications.html' %}
+    {% include 'admin/_pagination.html' %}
+  </section>
+  <section class="card detail archive-panel">
+    <div class="section-heading"><h2>Archivar convocatoria</h2></div>
+    <label>Nombre de la convocatoria / archivo
+      <input name="archive_name" value="{{ suggested_archive_name }}" minlength="3" maxlength="120" required>
+    </label>
+    <p class="muted">Solo se archivan solicitudes enviadas. Las solicitudes archivadas dejan de aparecer en Solicitudes, Comparación y Ponderador, y quedan disponibles en <a href="{{ url_for('admin.archived') }}">Archivados</a>.</p>
+    <div class="review-actions">
+      <button name="scope" value="selected">Archivar seleccionadas</button>
+      <button name="scope" value="filtered" class="secondary archive-all">Archivar todas las filtradas</button>
+    </div>
+    <p class="muted">«Archivar todas las filtradas» incluye todas las páginas y respeta los filtros actuales.</p>
+  </section>
+</form>
+{% endblock %}

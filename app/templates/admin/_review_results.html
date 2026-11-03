@@ -1,0 +1,15 @@
+{% for (year, home, kind), rows in groups.items() %}
+<section class="card"><div class="section-heading"><h2>{{ (home or 'Sin hogar')|capitalize }} · {{ 'Primera inscripción' if kind == 'new' else 'Renovación' }} · {{ year }}</h2><span>{{ rows|length }} {{ 'inscripción' if rows|length == 1 else 'inscripciones' }}</span></div>
+<div class="table-wrap"><table class="review-table"><thead><tr><th>Código / aspirante</th><th>Institución</th><th>Promedio escolar</th><th>Personas en el hogar</th><th>Ingreso mensual total</th><th>Ingreso mensual por persona</th><th>Inscripción (UTC)</th><th>Certificado</th></tr></thead><tbody>
+{% for row in rows %}<tr>
+  <td><a href="{{ url_for('admin.application_detail', application_id=row.item.id) }}">{{ row.item.tracking_code }}</a><small>{{ row.name }}</small></td>
+  <td>{{ row.institution }}</td>
+  <td>{{ '%.2f'|format(row.average) if row.average is not none else 'Sin informar' }}</td>
+  <td>{{ row.residents if row.residents is not none else 'Sin informar' }}{% if row.residents is not none %}<small>Incluye al aspirante</small>{% endif %}</td>
+  <td>{{ '$ %.2f'|format(row.total_income) if row.total_income is not none else 'Incompleto' }}</td>
+  <td><strong>{{ '$ %.2f'|format(row.income_per_person) if row.income_per_person is not none else 'Incompleto' }}</strong>{% if row.missing_income %}<small>{{ row.missing_income }} {{ 'ingreso sin informar' if row.missing_income == 1 else 'ingresos sin informar' }}</small>{% endif %}</td>
+  <td>{{ row.item.submitted_at.strftime('%d/%m/%Y') if row.item.submitted_at else 'Sin fecha' }}</td>
+  <td>{{ 'Recibido' if row.item.good_conduct_received_at else 'No recibido' }}</td>
+</tr>{% endfor %}
+</tbody></table></div></section>
+{% else %}<div class="card empty">No hay inscripciones enviadas para los filtros seleccionados.</div>{% endfor %}

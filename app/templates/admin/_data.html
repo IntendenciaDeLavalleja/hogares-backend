@@ -1,0 +1,41 @@
+{% set labels = {
+  'home': 'Hogar', 'type': 'Tipo de solicitud', 'renewalYear': 'Año de renovación', 'sameHome': 'Mismo hogar',
+  'fullName': 'Nombre completo', 'nationalId': 'Cédula de identidad', 'birthDate': 'Fecha de nacimiento',
+  'address': 'Domicilio', 'locality': 'Localidad', 'phone': 'Teléfono', 'ownMobile': 'Celular personal',
+  'responsibleMobile': 'Celular del responsable', 'grade': 'Curso', 'institution': 'Institución',
+  'previousInstitution': 'Institución anterior', 'average': 'Promedio', 'hasPendingSubjects': 'Materias pendientes',
+  'pendingSubjectsCount': 'Cantidad de materias pendientes', 'healthCenter': 'Centro de salud',
+  'hasDisability': 'Situación de discapacidad', 'dailyLivingSupports': 'Apoyos y adaptaciones en la vida diaria',
+  'livesAlone': 'Vive solo/a', 'motherSituation': 'Situación de la madre', 'fatherSituation': 'Situación del padre',
+  'hasChronicDisease': 'Enfermedad crónica', 'chronicDisease': 'Detalle de enfermedad', 'inTreatment': 'En tratamiento',
+  'takesControlledMedication': 'Medicación controlada', 'controlledMedication': 'Detalle de medicación',
+  'hasNeurodevelopmentDiagnosis': 'Diagnóstico de neurodesarrollo', 'hasAllergy': 'Tiene alergias',
+  'allergy': 'Detalle de alergias', 'emergencyName': 'Contacto de emergencia', 'emergencyPhone': 'Teléfono de emergencia',
+  'emergencyMobile': 'Celular de emergencia', 'receivesScholarship': 'Recibe beca', 'scholarship': 'Beca',
+  'currentlyWorks': 'Trabaja actualmente', 'workplace': 'Lugar de trabajo', 'monthlySalary': 'Salario mensual',
+  'livesWithMother': 'Convive con su madre', 'livesWithFather': 'Convive con su padre', 'surnames': 'Apellidos',
+  'names': 'Nombres', 'name': 'Nombre', 'relationship': 'Parentesco', 'age': 'Edad', 'occupation': 'Ocupación',
+  'monthlyIncome': 'Ingreso mensual', 'employmentStatus': 'Situación laboral', 'role': 'Progenitor',
+  'childSupportIncome': 'Pensión alimenticia', 'housingStatus': 'Tenencia de vivienda', 'rentAmount': 'Alquiler mensual',
+  'installmentAmount': 'Cuota mensual', 'motorcycle': 'Moto', 'car': 'Automóvil', 'owns': 'Posee vehículo',
+  'quantity': 'Cantidad', 'brand': 'Marca', 'year': 'Año', 'rural': 'Actividad rural', 'ownsField': 'Campo propio',
+  'leasesField': 'Arrienda campo', 'leaseAmount': 'Importe de arrendamiento', 'notes': 'Observaciones'
+} %}
+{% set values = {'new': 'Ingreso', 'renewal': 'Renovación', 'minas': 'Minas', 'mariscala': 'Mariscala',
+ 'montevideo': 'Montevideo', 'owner': 'Propietario', 'usufruct': 'Usufructo', 'succession': 'Sucesión',
+ 'tenant': 'Inquilino', 'promissory_buyer': 'Promitente comprador', 'formal_employee': 'Empleado formal',
+ 'retired': 'Jubilado', 'self_employed': 'Independiente', 'informal': 'Trabajo informal', 'seasonal': 'Zafral',
+ 'unemployed': 'Desocupado', 'student': 'Estudiante', 'other': 'Otro', 'mother': 'Madre', 'father': 'Padre',
+ 'lives_with': 'Convive con el aspirante', 'outside': 'No convive; aporta sus datos', 'deceased': 'Falleció',
+ 'unknown': 'No conoce sus datos', 'no_contact': 'Sin vínculo o contacto; no puede aportar datos'} %}
+{% macro show_data(value) %}
+  {% if value is mapping %}
+    <dl class="data-grid">{% for key, item in value.items() if key != 'id' %}<div><dt>{{ labels.get(key, key) }}</dt><dd>{{ show_data(item) }}</dd></div>{% endfor %}</dl>
+  {% elif value is sequence and value is not string %}
+    {% for item in value %}<div class="data-item">{{ show_data(item) }}</div>{% else %}<span class="muted">Sin registros</span>{% endfor %}
+  {% elif value is sameas true %}Sí
+  {% elif value is sameas false %}No
+  {% elif value is none or value == '' %}<span class="muted">Sin informar</span>
+  {% elif value is string %}{{ values.get(value, value) }}
+  {% else %}{{ value }}{% endif %}
+{% endmacro %}

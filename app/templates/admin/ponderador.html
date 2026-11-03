@@ -1,0 +1,30 @@
+{% extends 'admin/base.html' %}
+{% block title %}Ponderador{% endblock %}
+{% block content %}
+<h1>Ponderador</h1>
+<p class="subtitle">Definí cuánto pesa cada variable dentro del ranking. Los porcentajes deben sumar 100%.</p>
+
+<section class="card detail ponderador-config">
+  <div class="section-heading"><h2>Porcentaje por variable</h2>
+    <span class="badge {% if settings %}submitted{% else %}draft{% endif %}">{% if settings %}Guardado{% else %}Valores iniciales{% endif %}</span>
+  </div>
+  <form method="post" action="" class="ponderador-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="weight-grid">
+      <label>Ingreso mensual conviviente (%)
+        <input type="number" name="income_weight" min="0" max="100" step="0.01" inputmode="decimal" value="{{ income_input }}" required>
+        <small>A menor ingreso por persona, mayor prioridad.</small>
+      </label>
+      <label>Promedio de escolaridad (%)
+        <input type="number" name="schooling_weight" min="0" max="100" step="0.01" inputmode="decimal" value="{{ schooling_input }}" required>
+        <small>A mayor promedio declarado, mayor puntaje.</small>
+      </label>
+    </div>
+    <p class="muted">Los dos porcentajes deben sumar 100%. La configuración es global y se conserva para las próximas consultas.</p>
+    <div class="review-actions">
+      <button>Guardar ponderación</button>
+      {% if settings %}<span class="muted">Última actualización: {{ settings.updated_at.strftime('%d/%m/%Y %H:%M') }} UTC</span>{% endif %}
+    </div>
+  </form>
+</section>
+{% endblock %}

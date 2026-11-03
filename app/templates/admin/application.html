@@ -1,0 +1,22 @@
+{% extends 'admin/base.html' %}
+{% from 'admin/_data.html' import show_data %}
+{% block title %}Detalle de solicitud{% endblock %}
+{% block content %}
+<a href="{{ url_for('admin.applications') }}">← Solicitudes</a>
+<h1>{{ item.tracking_code or 'Solicitud en borrador' }}</h1>
+{% if item.status == 'submitted' %}<p><a class="action-link" href="{{ url_for('admin.application_pdf', application_id=item.id) }}">Descargar ficha PDF con adjuntos</a></p>{% endif %}
+<p class="subtitle">{{ (item.home or 'Hogar sin definir')|capitalize }} · {{ item.application_year }} · {{ 'Enviada' if item.status == 'submitted' else 'Borrador' }}{% if item.submitted_at %} · Enviada el {{ item.submitted_at.strftime('%d/%m/%Y %H:%M') }} UTC{% endif %}</p>
+{% if item.archived_at %}<p class="notice" role="alert">Solicitud archivada en «{{ item.archive_name or 'Sin nombre' }}» el {{ item.archived_at.strftime('%d/%m/%Y %H:%M') }} UTC.</p>{% endif %}
+<section class="card detail"><h2>Certificado de buena conducta</h2><p class="notice" role="alert">El certificado debe enviarlo el Ministerio del Interior directamente a la institución solicitante. No corresponde que lo adjunte el postulante.</p>
+{% if institution and institution.good_conduct_email %}<p>Correo de recepción: <a href="mailto:{{ institution.good_conduct_email }}">{{ institution.good_conduct_email }}</a></p>{% else %}<p class="notice error">Falta configurar el correo de recepción en Contacto institucional.</p>{% endif %}
+<p><strong>{{ 'Recibido' if item.good_conduct_received_at else 'No recibido' }}</strong>{% if item.good_conduct_received_at %} · {{ item.good_conduct_received_at.strftime('%d/%m/%Y %H:%M') }} UTC{% if receiver %} · Registrado por {{ receiver.name }}{% endif %}{% endif %}</p>
+{% if item.status == 'submitted' %}<form method="post" action="{{ url_for('admin.good_conduct', application_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="received" value="{{ 'false' if item.good_conduct_received_at else 'true' }}"><button>{{ 'Marcar como no recibido' if item.good_conduct_received_at else '✓ Marcar certificado recibido' }}</button></form>{% endif %}</section>
+{% for key, title in [('request', 'Solicitud'), ('applicant', 'Datos de la persona aspirante'), ('studies', 'Estudios'), ('health', 'Salud'), ('household', 'Convivencia'), ('householdMembers', 'Integrantes del hogar'), ('outsideParents', 'Progenitores fuera del hogar'), ('socioeconomic', 'Situación socioeconómica')] %}
+<section class="card detail"><h2>{{ title }}</h2>{{ show_data(data.get(key)) }}</section>
+{% endfor %}
+<section class="card detail"><h2>Declaración</h2><p>{{ 'Aceptada' if data.get('acceptedDeclaration') else 'Pendiente' }}</p></section>
+<section class="card detail"><h2>Correo de confirmación</h2><p>{{ data.get('contactEmail') or 'Sin informar' }}</p><p>{{ 'Confirmación enviada' if item.confirmation_email_sent_at else 'Confirmación pendiente de envío' }}</p></section>
+<section class="card"><div class="section-heading"><h2>Documentos adjuntos</h2></div><div class="table-wrap"><table><thead><tr><th>Documento</th><th>Tamaño</th><th>Acción</th></tr></thead><tbody>
+{% for doc in item.documents %}<tr><td>{{ doc.original_name }}</td><td>{{ (doc.size_bytes / 1024)|round(1) }} KB</td><td><a href="{{ url_for('admin.download_document', application_id=item.id, document_id=doc.id) }}">Descargar</a></td></tr>{% else %}<tr><td colspan="3" class="empty">No hay documentos adjuntos.</td></tr>{% endfor %}
+</tbody></table></div></section>
+{% endblock %}

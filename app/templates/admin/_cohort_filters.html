@@ -1,0 +1,2 @@
+<label>Tipo de inscripción<select name="type">{% for value, label in [('', 'Todos'), ('new', 'Primera inscripción'), ('renewal', 'Renovación')] %}<option value="{{ value }}" {% if request.args.get('type', '') == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+<label>Año de convocatoria<input type="number" name="year" min="2000" max="2100" value="{{ request.args.get('year', '') }}" placeholder="Todos"></label>

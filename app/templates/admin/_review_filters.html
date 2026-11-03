@@ -1,0 +1,22 @@
+<form class="review-filters card detail" method="get">
+  <div class="selection-grid">
+    <fieldset><legend>Hogares</legend><div class="checkbox-options">
+      {% for value, label in [('minas', 'Minas'), ('mariscala', 'Mariscala'), ('montevideo', 'Montevideo')] %}
+      <label><input type="checkbox" name="home" value="{{ value }}" {% if value in selected_homes %}checked{% endif %}>{{ label }}</label>
+      {% endfor %}
+    </div></fieldset>
+    <fieldset><legend>Tipo de inscripción</legend><div class="checkbox-options">
+      {% for value, label in [('new', 'Primera inscripción'), ('renewal', 'Renovación')] %}
+      <label><input type="checkbox" name="type" value="{{ value }}" {% if value in selected_types %}checked{% endif %}>{{ label }}</label>
+      {% endfor %}
+    </div></fieldset>
+    <label>Año de convocatoria<input type="number" name="year" min="2000" max="2100" value="{{ request.args.get('year', '') }}" placeholder="Todos"></label>
+    <div class="date-range">
+      <label>Inscripción desde (UTC)<input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}"></label>
+      <label>Inscripción hasta (UTC)<input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}"></label>
+    </div>
+  </div>
+  <p class="muted filter-hint">Podés marcar uno, varios o todos. Si dejás un grupo sin marcar, se incluyen todas sus opciones. La fecha de inscripción corresponde al envío de la solicitud (UTC).</p>
+  <div class="review-actions"><button>Aplicar filtros</button><a href="{{ url_for(request.endpoint) }}">Limpiar</a></div>
+</form>
+<div class="review-actions export-actions"><span>{{ result_count }} {{ 'inscripción encontrada' if result_count == 1 else 'inscripciones encontradas' }}</span>{% if secondary_endpoint %}<a class="export-button secondary-button" href="{{ url_for(secondary_endpoint, **export_args) }}">{{ secondary_label }}</a>{% endif %}<a class="export-button" href="{{ url_for(export_endpoint|default('admin.comparison_csv'), **export_args) }}">{{ export_label|default('Descargar CSV de datos filtrados') }}</a></div>

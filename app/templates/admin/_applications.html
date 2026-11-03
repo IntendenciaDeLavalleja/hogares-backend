@@ -1,0 +1,13 @@
+{% set columns = 10 if selectable else 9 %}
+<div class="table-wrap"><table>
+<thead><tr>{% if selectable %}<th>Sel.</th>{% endif %}<th>Código</th><th>Hogar</th><th>Tipo</th><th>Año</th><th>Inscripción (UTC)</th><th>Estado</th><th>Certificado</th><th>Creación</th><th></th></tr></thead>
+<tbody>{% for item in items %}<tr>
+  {% if selectable %}<td>{% if item.status == 'submitted' and not item.archived_at %}<input class="table-select" type="checkbox" name="application_id" value="{{ item.id }}" aria-label="Seleccionar {{ item.tracking_code or item.id }}">{% else %}<span class="muted">—</span>{% endif %}</td>{% endif %}
+  <td><strong>{{ item.tracking_code or 'Sin código' }}</strong></td><td>{{ (item.home or 'Sin definir')|capitalize }}</td>
+  <td>{{ {'new': 'Primera', 'renewal': 'Renovación'}.get(item.application_type, 'Sin definir') }}</td><td>{{ item.application_year }}</td>
+  <td>{{ item.submitted_at.strftime('%d/%m/%Y') if item.submitted_at else 'Sin enviar' }}</td>
+  <td><span class="badge {{ item.status }}">{{ 'Enviada' if item.status == 'submitted' else 'Borrador' }}</span></td>
+  <td>{{ 'Recibido' if item.good_conduct_received_at else 'No recibido' }}</td>
+  <td>{{ item.created_at.strftime('%d/%m/%Y') }}</td><td><a href="{{ url_for('admin.application_detail', application_id=item.id) }}">Ver solicitud</a>{% if item.status == 'submitted' %}<small><a href="{{ url_for('admin.application_pdf', application_id=item.id) }}">Ficha PDF</a></small>{% endif %}</td>
+</tr>{% else %}<tr><td colspan="{{ columns }}" class="empty">No hay solicitudes para mostrar.</td></tr>{% endfor %}</tbody>
+</table></div>

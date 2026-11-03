@@ -1,0 +1,11 @@
+{% extends 'admin/base.html' %}
+{% block title %}Verificar acceso{% endblock %}
+{% block content %}
+<div class="auth-heading"><span class="brand-icon">H</span><h1>Verificá tu acceso</h1><p>Ingresá el código de seis dígitos que enviamos a tu correo. Vence en diez minutos.</p></div>
+<form method="post" class="stack">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Código de verificación<input name="code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus></label>
+  <button>Ingresar al panel</button>
+</form>
+<p class="hint"><a href="{{ url_for('admin.login') }}">Volver a iniciar sesión</a></p>
+{% endblock %}

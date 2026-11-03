@@ -1,0 +1,784 @@
+{
+  "baseline": {
+    "contactEmail": "aspirante@example.uy",
+    "request": {
+      "home": "minas",
+      "type": "new",
+      "renewalYear": "",
+      "sameHome": null
+    },
+    "applicant": {
+      "fullName": "Persona Aspirante",
+      "nationalId": "4.567.890-5",
+      "birthDate": "2010-01-01",
+      "address": "Ruta 8 km 1",
+      "locality": "Minas",
+      "phone": "44421234",
+      "ownMobile": "",
+      "responsibleMobile": "099123456"
+    },
+    "studies": {
+      "grade": "5to",
+      "institution": "Liceo Departamental",
+      "previousInstitution": "",
+      "average": "",
+      "hasPendingSubjects": false,
+      "pendingSubjectsCount": ""
+    },
+    "health": {
+      "hasDisability": false,
+      "dailyLivingSupports": "",
+      "healthCenter": "ASSE",
+      "hasChronicDisease": false,
+      "chronicDisease": "",
+      "inTreatment": null,
+      "takesControlledMedication": false,
+      "controlledMedication": "",
+      "hasNeurodevelopmentDiagnosis": false,
+      "hasAllergy": false,
+      "allergy": "",
+      "emergencyName": "Persona Responsable",
+      "emergencyPhone": "",
+      "emergencyMobile": "099111222",
+      "receivesScholarship": false,
+      "scholarship": "",
+      "currentlyWorks": false,
+      "workplace": "",
+      "monthlySalary": ""
+    },
+    "household": {
+      "livesWithMother": true,
+      "livesWithFather": true,
+      "livesAlone": false,
+      "motherSituation": "lives_with",
+      "fatherSituation": "lives_with"
+    },
+    "householdMembers": [
+      {
+        "id": "member-1",
+        "surnames": "Apellido",
+        "names": "Nombre",
+        "relationship": "Madre",
+        "age": 40,
+        "occupation": "Docente",
+        "monthlyIncome": 45000,
+        "employmentStatus": "formal_employee",
+        "nationalId": "",
+        "address": ""
+      }
+    ],
+    "outsideParents": [],
+    "socioeconomic": {
+      "housingStatus": "usufruct",
+      "rentAmount": "",
+      "installmentAmount": "",
+      "motorcycle": {
+        "owns": false,
+        "quantity": "",
+        "brand": "",
+        "year": ""
+      },
+      "car": {
+        "owns": false,
+        "quantity": "",
+        "brand": "",
+        "year": ""
+      },
+      "rural": {
+        "ownsField": false,
+        "leasesField": false,
+        "leaseAmount": ""
+      },
+      "notes": ""
+    },
+    "documents": [],
+    "acceptedDeclaration": true
+  },
+  "cases": [
+    {
+      "name": "sin-vehiculos-ni-campo",
+      "changes": {},
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "con-car",
+      "changes": {
+        "socioeconomic": {
+          "car": {
+            "owns": true,
+            "quantity": 1,
+            "brand": "Marca",
+            "year": 2026
+          }
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "transit_certificate",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "con-motorcycle",
+      "changes": {
+        "socioeconomic": {
+          "motorcycle": {
+            "owns": true,
+            "quantity": 1,
+            "brand": "Marca",
+            "year": 2026
+          }
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "transit_certificate",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "ambos-vehiculos",
+      "changes": {
+        "socioeconomic": {
+          "motorcycle": {
+            "owns": true,
+            "quantity": 1,
+            "brand": "Marca",
+            "year": 2026
+          },
+          "car": {
+            "owns": true,
+            "quantity": 1,
+            "brand": "Marca",
+            "year": 2026
+          }
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "transit_certificate",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "vivienda-owner",
+      "changes": {
+        "socioeconomic": {
+          "housingStatus": "owner",
+          "rentAmount": 10000,
+          "installmentAmount": 10000
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "property_tax",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "vivienda-tenant",
+      "changes": {
+        "socioeconomic": {
+          "housingStatus": "tenant",
+          "rentAmount": 10000,
+          "installmentAmount": 10000
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "rent_receipt",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "vivienda-promissory_buyer",
+      "changes": {
+        "socioeconomic": {
+          "housingStatus": "promissory_buyer",
+          "rentAmount": 10000,
+          "installmentAmount": 10000
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "installment_receipt",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "vivienda-usufruct",
+      "changes": {
+        "socioeconomic": {
+          "rentAmount": 10000,
+          "installmentAmount": 10000
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "vivienda-succession",
+      "changes": {
+        "socioeconomic": {
+          "housingStatus": "succession",
+          "rentAmount": 10000,
+          "installmentAmount": 10000
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "campo-True-False",
+      "changes": {
+        "socioeconomic": {
+          "rural": {
+            "ownsField": true,
+            "leaseAmount": 15000
+          }
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "dicose",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "campo-False-True",
+      "changes": {
+        "socioeconomic": {
+          "rural": {
+            "leasesField": true,
+            "leaseAmount": 15000
+          }
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "dicose",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "campo-True-True",
+      "changes": {
+        "socioeconomic": {
+          "rural": {
+            "ownsField": true,
+            "leasesField": true,
+            "leaseAmount": 15000
+          }
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "dicose",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "empleo-self_employed",
+      "changes": {
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 40,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "self_employed",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_affidavits",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "empleo-informal",
+      "changes": {
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 40,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "informal",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_affidavits",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "empleo-seasonal",
+      "changes": {
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 40,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "seasonal",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_affidavits",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "empleo-unemployed",
+      "changes": {
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 40,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "unemployed",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "passport_photo",
+        "school_records",
+        "unemployment_affidavits",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "empleo-student",
+      "changes": {
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 40,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "student",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "empleo-other",
+      "changes": {
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 40,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "other",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "empleo-retired",
+      "changes": {
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 40,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "retired",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "menor-desempleado",
+      "changes": {
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 16,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "unemployed",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "solo-sin-ingresos",
+      "changes": {
+        "household": {
+          "livesAlone": true,
+          "motherSituation": "deceased",
+          "fatherSituation": "unknown",
+          "livesWithMother": false,
+          "livesWithFather": false
+        },
+        "householdMembers": []
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "aspirante-currentlyWorks",
+      "changes": {
+        "health": {
+          "scholarship": "Beca",
+          "currentlyWorks": true,
+          "workplace": "Trabajo",
+          "monthlySalary": 15000
+        },
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 40,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "student",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "aspirante-receivesScholarship",
+      "changes": {
+        "health": {
+          "receivesScholarship": true,
+          "scholarship": "Beca",
+          "workplace": "Trabajo",
+          "monthlySalary": 15000
+        },
+        "householdMembers": [
+          {
+            "id": "member-1",
+            "surnames": "Apellido",
+            "names": "Nombre",
+            "relationship": "Madre",
+            "age": 40,
+            "occupation": "Docente",
+            "monthlyIncome": 0,
+            "employmentStatus": "student",
+            "nationalId": "",
+            "address": ""
+          }
+        ]
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "salud-hasChronicDisease",
+      "changes": {
+        "health": {
+          "dailyLivingSupports": "Apoyo para desplazarse",
+          "hasChronicDisease": true,
+          "chronicDisease": "Asma",
+          "inTreatment": false,
+          "controlledMedication": "Medicación"
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "medical_certificate",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "salud-takesControlledMedication",
+      "changes": {
+        "health": {
+          "dailyLivingSupports": "Apoyo para desplazarse",
+          "chronicDisease": "Asma",
+          "inTreatment": false,
+          "takesControlledMedication": true,
+          "controlledMedication": "Medicación"
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "medical_certificate",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "salud-hasDisability",
+      "changes": {
+        "health": {
+          "hasDisability": true,
+          "dailyLivingSupports": "Apoyo para desplazarse",
+          "chronicDisease": "Asma",
+          "inTreatment": false,
+          "controlledMedication": "Medicación"
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    },
+    {
+      "name": "renovacion-mismo-hogar",
+      "changes": {
+        "request": {
+          "type": "renewal",
+          "renewalYear": 2025,
+          "sameHome": true
+        }
+      },
+      "required": [
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo"
+      ]
+    },
+    {
+      "name": "renovacion-otro-hogar",
+      "changes": {
+        "request": {
+          "type": "renewal",
+          "renewalYear": 2025,
+          "sameHome": false
+        }
+      },
+      "required": [
+        "address",
+        "applicant_id",
+        "health_card",
+        "household_ids",
+        "income_proofs",
+        "passport_photo",
+        "school_records",
+        "ute_receipt"
+      ]
+    }
+  ]
+}

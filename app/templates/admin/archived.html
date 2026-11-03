@@ -1,0 +1,67 @@
+{% extends 'admin/base.html' %}
+{% block title %}Convocatorias archivadas{% endblock %}
+{% block content %}
+<h1>Convocatorias archivadas</h1>
+<p class="subtitle">Consultá y analizá los casos archivados por convocatoria. Se conservan para auditorías e inspecciones.</p>
+
+<form class="filters" method="get">
+  <label>Convocatoria / archivo
+    <select name="archive">
+      <option value="">Todas</option>
+      {% for name in archive_names %}<option value="{{ name }}" {% if request.args.get('archive', '') == name %}selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Hogar<select name="home">{% for value, label in [('', 'Todos'), ('minas', 'Minas'), ('mariscala', 'Mariscala'), ('montevideo', 'Montevideo')] %}<option value="{{ value }}" {% if request.args.get('home', '') == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <label>Tipo de inscripción<select name="type">{% for value, label in [('', 'Todos'), ('new', 'Primera'), ('renewal', 'Renovación')] %}<option value="{{ value }}" {% if request.args.get('type', '') == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+  <label>Año de convocatoria<input type="number" name="year" min="2000" max="2100" value="{{ request.args.get('year', '') }}" placeholder="Todos"></label>
+  <label>Inscripción desde (UTC)<input type="date" name="date_from" value="{{ request.args.get('date_from', '') }}"></label>
+  <label>Inscripción hasta (UTC)<input type="date" name="date_to" value="{{ request.args.get('date_to', '') }}"></label>
+  <label>Código de seguimiento<input name="q" value="{{ request.args.get('q', '') }}" maxlength="24" placeholder="Buscar código"></label>
+  <button>Filtrar</button><a href="{{ url_for('admin.archived') }}">Limpiar</a>
+</form>
+
+<div class="review-actions export-actions">
+  <span>{{ result_count }} {{ 'solicitud archivada' if result_count == 1 else 'solicitudes archivadas' }}</span>
+  <a class="export-button" href="{{ url_for('admin.archived_csv', **export_args) }}">Descargar CSV de archivados</a>
+</div>
+<p class="muted">Restaurar una convocatoria devuelve todos sus casos a Solicitudes, aunque los filtros actuales oculten algunos.</p>
+
+{% for group in groups %}
+<section class="card archived-batch">
+  <div class="section-heading archived-heading">
+    <div>
+      <h2>{{ group.name }}</h2>
+      <small>Archivado el {{ group.archived_at.strftime('%d/%m/%Y %H:%M') }} UTC · {{ group.count }} {{ 'solicitud' if group.count == 1 else 'solicitudes' }}</small>
+    </div>
+    {% if group.name != 'Sin nombre' %}
+    <form method="post" action="{{ url_for('admin.restore_archive') }}" class="restore-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="archive_name" value="{{ group.name }}">
+      <button class="secondary">Restaurar convocatoria</button>
+    </form>
+    {% endif %}
+  </div>
+  <div class="table-wrap">
+    <table class="archived-table">
+      <thead><tr><th>Código / aspirante</th><th>Hogar</th><th>Tipo</th><th>Año</th><th>Inscripción (UTC)</th><th>Promedio escolar</th><th>Personas</th><th>Ingreso por persona</th><th>Certificado</th><th></th></tr></thead>
+      <tbody>
+      {% for row in group.rows %}<tr>
+        <td><a href="{{ url_for('admin.application_detail', application_id=row.item.id) }}">{{ row.item.tracking_code or 'Sin código' }}</a><small>{{ row.name }}</small><small>{{ row.institution }}</small></td>
+        <td>{{ (row.item.home or 'Sin hogar')|capitalize }}</td>
+        <td>{{ {'new': 'Primera', 'renewal': 'Renovación'}.get(row.item.application_type, 'Sin definir') }}</td>
+        <td>{{ row.item.application_year }}</td>
+        <td>{{ row.item.submitted_at.strftime('%d/%m/%Y') if row.item.submitted_at else 'Sin fecha' }}</td>
+        <td>{{ '%.2f'|format(row.average) if row.average is not none else 'Sin informar' }}</td>
+        <td>{{ row.residents if row.residents is not none else 'Sin informar' }}</td>
+        <td>{{ '$ %.2f'|format(row.income_per_person) if row.income_per_person is not none else 'Incompleto' }}</td>
+        <td>{{ 'Recibido' if row.item.good_conduct_received_at else 'No recibido' }}</td>
+        <td><a href="{{ url_for('admin.application_detail', application_id=row.item.id) }}">Ver ficha</a><small><a href="{{ url_for('admin.application_pdf', application_id=row.item.id) }}">PDF</a></small></td>
+      </tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% else %}
+<div class="card empty">No hay convocatorias archivadas para los filtros seleccionados.</div>
+{% endfor %}
+{% endblock %}

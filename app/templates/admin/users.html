@@ -1,0 +1,18 @@
+{% extends 'admin/base.html' %}
+{% block title %}Usuarios{% endblock %}
+{% block content %}
+<h1>Usuarios</h1><p class="subtitle">Administrá el acceso del equipo al panel.</p>
+<details class="card detail"><summary>Crear usuario</summary><form method="post" class="filters">
+<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>Nombre<input name="name" minlength="2" maxlength="100" required value="{{ request.form.get('name', '') }}"></label>
+<label>Correo<input name="email" type="email" maxlength="150" required value="{{ request.form.get('email', '') }}"></label>
+<label>Contraseña<input name="password" type="password" minlength="8" required autocomplete="new-password" placeholder="8 caracteres, letras y números"></label>
+<label>Rol<select name="role"><option value="admin">Administrador</option><option value="super_admin">Superadministrador</option></select></label><button>Crear usuario</button>
+</form></details>
+<section class="card"><div class="table-wrap"><table><thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>
+{% for user in pagination.items %}<tr><td><strong>{{ user.name }}</strong><small>{{ user.email }}</small></td><td>{{ 'Superadministrador' if user.is_super_admin else 'Administrador' }}</td><td><span class="badge {{ 'submitted' if user.is_active else 'draft' }}">{{ 'Activo' if user.is_active else 'Inactivo' }}</span></td><td>
+{% if user.id != admin_user.id %}<form method="post" action="{{ url_for('admin.user_active', user_id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="is_active" value="{{ 'false' if user.is_active else 'true' }}"><button class="secondary">{{ 'Desactivar' if user.is_active else 'Activar' }}</button></form>{% endif %}
+<details><summary>Restablecer contraseña</summary><form method="post" class="stack" action="{{ url_for('admin.user_password', user_id=user.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Nueva contraseña<input name="new_password" type="password" minlength="8" required autocomplete="new-password"></label><button>Guardar contraseña</button></form></details>
+</td></tr>{% else %}<tr><td colspan="4" class="empty">No hay usuarios.</td></tr>{% endfor %}
+</tbody></table></div>{% include 'admin/_pagination.html' %}</section>
+{% endblock %}

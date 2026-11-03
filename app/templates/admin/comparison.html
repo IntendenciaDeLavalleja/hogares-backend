@@ -1,0 +1,15 @@
+{% extends 'admin/base.html' %}
+{% block title %}Comparación de inscripciones{% endblock %}
+{% block content %}
+<h1>Comparación de inscripciones</h1>
+<p class="subtitle">Ranking ponderado de las solicitudes enviadas y datos declarados para revisión humana.</p>
+{% include 'admin/_review_filters.html' %}
+{% include 'admin/_ponderador_results.html' %}
+<details class="card detail">
+  <summary>Cómo se calcula el ranking</summary>
+  {% include 'admin/_ponderador_method.html' %}
+</details>
+<p class="eyebrow">Datos declarados por grupo</p>
+{% include 'admin/_review_method.html' %}
+{% include 'admin/_review_results.html' %}
+{% endblock %}
