@@ -9,7 +9,7 @@ Este repositorio contiene el backend en la raíz: no configurar un subdirectorio
 ## Arquitectura
 
 - Application Factory de Flask.
-- MariaDB mediante SQLAlchemy/PyMySQL y migraciones Alembic/Flask-Migrate.
+- MariaDB mediante SQLAlchemy/MariaDB Connector/Python y migraciones Alembic/Flask-Migrate.
 - Redis para límites compartidos entre workers.
 - MinIO privado para documentos.
 - Marshmallow para validación estricta y rechazo de campos desconocidos.
@@ -211,7 +211,7 @@ pip-audit -r requirements.txt
 - Los nuevos datos se guardan en el formulario cifrado existente. No requieren columnas nuevas.
 - `APPLICATION_YEAR` debe coincidir con el argumento de compilación del frontend.
 - La conexión a MariaDB se configura con una única variable `DATABASE_URL`, por ejemplo
-  `mariadb+pymysql://root:password@127.0.0.1:3306/sociales_db`.
+  `mariadb+mariadbconnector://root:password@127.0.0.1:3306/sociales_db`.
   En Coolify, reemplazar `127.0.0.1` por el host interno real de MariaDB y completar las credenciales.
   Si la contraseña contiene caracteres reservados de URL, deben estar codificados en la cadena.
 

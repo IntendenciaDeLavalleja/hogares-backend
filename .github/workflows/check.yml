@@ -13,6 +13,8 @@ jobs:
           python-version: '3.13'
           cache: pip
           cache-dependency-path: requirements*.txt
+      - name: Instalar MariaDB Connector/C y herramientas de compilación
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends build-essential libmariadb-dev pkg-config
       - run: pip install -r requirements-dev.txt
       - run: ruff check app tests scripts
       - run: pytest

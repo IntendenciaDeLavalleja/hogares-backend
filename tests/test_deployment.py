@@ -3,10 +3,19 @@ from pathlib import Path
 from conftest import TestConfig as AppTestConfig
 from flask import jsonify
 from flask_migrate import check, downgrade, upgrade
-from sqlalchemy import inspect
+from sqlalchemy import create_engine, inspect
 
 from app import create_app
 from app.extensions import db
+
+
+def test_mariadb_connector_driver_loads():
+    engine = create_engine("mariadb+mariadbconnector://example:example@127.0.0.1:3306/sociales_db")
+    try:
+        assert engine.dialect.driver == "mariadbconnector"
+        assert engine.dialect.dbapi.__name__ == "mariadb"
+    finally:
+        engine.dispose()
 
 
 def test_migrations_upgrade_downgrade_and_model_match(tmp_path):

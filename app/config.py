@@ -1,7 +1,6 @@
 import os
 from datetime import date, timedelta
 from pathlib import Path
-from urllib.parse import quote_plus
 
 from cryptography.fernet import Fernet
 from dotenv import load_dotenv
@@ -39,14 +38,7 @@ class Config:
     SESSION_REFRESH_EACH_REQUEST = False
     DATA_ENCRYPTION_KEY = os.getenv("DATA_ENCRYPTION_KEY", "")
     FILE_ENCRYPTION_KEY = os.getenv("FILE_ENCRYPTION_KEY", "")
-    _database_password = quote_plus(os.getenv("DB_PASSWORD", ""))
-    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "") or (
-        f"mariadb+pymysql://{quote_plus(os.getenv('DB_USER', 'hogares'))}:{_database_password}"
-        f"@{os.getenv('DB_HOST', 'database')}:{os.getenv('DB_PORT', '3306')}/{os.getenv('DB_NAME', 'hogares_db')}"
-        "?charset=utf8mb4"
-        if _database_password
-        else ""
-    )
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL", "")
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True, "pool_recycle": 280}
     RATELIMIT_STORAGE_URI = os.getenv("REDIS_URL") or "memory://"

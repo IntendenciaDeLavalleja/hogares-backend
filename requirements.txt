@@ -12,7 +12,7 @@ argon2-cffi==25.1.0
 cryptography==50.0.0
 email-validator==2.3.0
 gunicorn==24.1.1
-PyMySQL==1.2.3
+mariadb==1.1.14
 marshmallow==4.2.2
 minio==7.2.16
 Pillow==13.0.0

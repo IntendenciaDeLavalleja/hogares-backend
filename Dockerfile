@@ -1,6 +1,7 @@
 FROM python:3.13.11-slim-bookworm AS builder
 
 ENV PIP_DISABLE_PIP_VERSION_CHECK=1 PIP_NO_CACHE_DIR=1
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential libmariadb-dev pkg-config && rm -rf /var/lib/apt/lists/*
 WORKDIR /build
 COPY requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip==26.2.1
@@ -9,7 +10,7 @@ RUN pip wheel --wheel-dir /wheels -r requirements.txt
 FROM python:3.13.11-slim-bookworm
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 FLASK_APP=wsgi.py FLASK_ENV=production PORT=5000
-RUN apt-get update && apt-get install -y --no-install-recommends curl && rm -rf /var/lib/apt/lists/* && addgroup --system app && adduser --system --ingroup app app
+RUN apt-get update && apt-get install -y --no-install-recommends curl libmariadb3 && rm -rf /var/lib/apt/lists/* && addgroup --system app && adduser --system --ingroup app app
 WORKDIR /app
 COPY --from=builder /wheels /wheels
 COPY requirements.txt .
