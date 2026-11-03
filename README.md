@@ -210,7 +210,10 @@ pip-audit -r requirements.txt
 - Las cédulas de convivientes no se exigen cuando vive solo/a.
 - Los nuevos datos se guardan en el formulario cifrado existente. No requieren columnas nuevas.
 - `APPLICATION_YEAR` debe coincidir con el argumento de compilación del frontend.
-  `DATABASE_URL`, si se usa, admite `mariadb+pymysql://usuario:clave@servidor/base?charset=utf8mb4`.
+- La conexión a MariaDB se configura con una única variable `DATABASE_URL`, por ejemplo
+  `mariadb+pymysql://root:password@127.0.0.1:3306/sociales_db`.
+  En Coolify, reemplazar `127.0.0.1` por el host interno real de MariaDB y completar las credenciales.
+  Si la contraseña contiene caracteres reservados de URL, deben estar codificados en la cadena.
 
 `flask check-services --smtp` comprueba base de datos, Redis, MinIO y conexión/autenticación
 SMTP sin enviar correos. Para despliegue completo, ver `docs/COOLIFY.md`.

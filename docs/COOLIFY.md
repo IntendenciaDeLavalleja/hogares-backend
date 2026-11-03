@@ -16,6 +16,16 @@ El servicio verifica/crea el bucket al acceder; si la política no permite crear
 3. Dominio HTTPS, por ejemplo `https://api-hogares.example.uy`.
 4. Cargar `.env.example` en las variables de **runtime** y completar todas las credenciales reales.
    Desactivar buildtime para los secretos; el build no necesita credenciales.
+   La conexión a MariaDB usa una sola variable:
+
+   ```dotenv
+   DATABASE_URL=mariadb+pymysql://usuario:password@HOST_INTERNO_MARIADB:3306/sociales_db
+   ```
+
+   Reemplazar usuario, contraseña y host por los del recurso de MariaDB. `127.0.0.1` solo
+   corresponde cuando la base está en el mismo equipo/proceso de red; dentro del contenedor
+   del backend apunta al propio contenedor. Codificar los caracteres reservados de la contraseña
+   en formato URL. No hace falta configurar `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER` ni `DB_PASSWORD`.
 5. Configurar `CORS_ORIGINS=https://hogares.example.uy` con el dominio público exacto del frontend,
    sin `/api` ni otras rutas. Varios orígenes se separan por comas. No usar `*`.
 6. `TRUST_PROXY=true`, `FORCE_HTTPS=false`, `SESSION_COOKIE_SECURE=true`: Coolify termina TLS,
