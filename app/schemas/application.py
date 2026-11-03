@@ -50,6 +50,12 @@ class RequestSchema(StrictSchema):
     renewalYear = NullableInteger(load_default=None, allow_none=True, validate=validate.Range(min=2000, max=2100))
     sameHome = fields.Boolean(load_default=None, allow_none=True)
 
+    @pre_load
+    def clear_new_application_fields(self, data, **kwargs):
+        if isinstance(data, dict) and data.get("type") == "new":
+            return {**data, "renewalYear": "", "sameHome": None}
+        return data
+
     @validates_schema
     def validate_renewal(self, data, **kwargs):
         if data.get("renewalYear") and data["renewalYear"] > current_app.config["APPLICATION_YEAR"]:
@@ -89,6 +95,12 @@ class StudiesSchema(StrictSchema):
     hasPendingSubjects = fields.Boolean(required=True)
     pendingSubjectsCount = NullableInteger(load_default=None, allow_none=True, validate=validate.Range(min=1, max=100))
 
+    @pre_load
+    def clear_no_pending_subjects(self, data, **kwargs):
+        if isinstance(data, dict) and data.get("hasPendingSubjects") is False:
+            return {**data, "pendingSubjectsCount": ""}
+        return data
+
     @validates_schema
     def validate_pending(self, data, **kwargs):
         if data.get("hasPendingSubjects") and data.get("pendingSubjectsCount") is None:
@@ -117,6 +129,26 @@ class HealthSchema(StrictSchema):
     currentlyWorks = fields.Boolean(required=True)
     workplace = fields.String(load_default="", validate=validate.Length(max=180))
     monthlySalary = NullableFloat(load_default=None, allow_none=True, validate=validate.Range(min=0, max=1_000_000_000))
+
+    @pre_load
+    def clear_hidden_health_fields(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+        normalized = dict(data)
+        for condition, text_fields in (
+            ("hasDisability", ("dailyLivingSupports",)),
+            ("hasChronicDisease", ("chronicDisease",)),
+            ("takesControlledMedication", ("controlledMedication",)),
+            ("hasAllergy", ("allergy",)),
+            ("receivesScholarship", ("scholarship",)),
+            ("currentlyWorks", ("workplace", "monthlySalary")),
+        ):
+            if normalized.get(condition) is False:
+                for field in text_fields:
+                    normalized[field] = ""
+        if normalized.get("hasChronicDisease") is False:
+            normalized["inTreatment"] = None
+        return normalized
 
     @validates_schema
     def validate_conditionals(self, data, **kwargs):
@@ -208,6 +240,12 @@ class VehicleSchema(StrictSchema):
     brand = fields.String(load_default="", validate=validate.Length(max=100))
     year = NullableInteger(load_default=None, allow_none=True, validate=validate.Range(min=1900, max=2100))
 
+    @pre_load
+    def clear_not_owned_vehicle(self, data, **kwargs):
+        if isinstance(data, dict) and data.get("owns") is False:
+            return {**data, "quantity": "", "brand": "", "year": ""}
+        return data
+
     @validates_schema
     def validate_owned(self, data, **kwargs):
         if data.get("year") and data["year"] > current_app.config["APPLICATION_YEAR"]:
@@ -220,6 +258,12 @@ class RuralSchema(StrictSchema):
     ownsField = fields.Boolean(required=True)
     leasesField = fields.Boolean(required=True)
     leaseAmount = NullableFloat(load_default=None, allow_none=True, validate=validate.Range(min=0, max=1_000_000_000))
+
+    @pre_load
+    def clear_not_leased_field(self, data, **kwargs):
+        if isinstance(data, dict) and data.get("leasesField") is False:
+            return {**data, "leaseAmount": ""}
+        return data
 
     @validates_schema
     def validate_lease(self, data, **kwargs):
@@ -239,6 +283,17 @@ class SocioeconomicSchema(StrictSchema):
     car = fields.Nested(VehicleSchema, required=True)
     rural = fields.Nested(RuralSchema, required=True)
     notes = fields.String(load_default="", validate=validate.Length(max=5000))
+
+    @pre_load
+    def clear_hidden_housing_amounts(self, data, **kwargs):
+        if not isinstance(data, dict):
+            return data
+        normalized = dict(data)
+        if normalized.get("housingStatus") != "tenant":
+            normalized["rentAmount"] = ""
+        if normalized.get("housingStatus") != "promissory_buyer":
+            normalized["installmentAmount"] = ""
+        return normalized
 
     @validates_schema
     def validate_housing(self, data, **kwargs):

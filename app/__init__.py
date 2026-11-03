@@ -47,6 +47,7 @@ def create_app(config_class=Config, config_overrides: dict | None = None) -> Fla
         },
         supports_credentials=False,
         allow_headers=["Authorization", "Content-Type", "X-Draft-Token", "X-Captcha-Token", "X-Captcha-Answer"],
+        expose_headers=["X-Request-ID", "Retry-After"],
         methods=["GET", "POST", "PUT", "OPTIONS"],
         max_age=600,
     )

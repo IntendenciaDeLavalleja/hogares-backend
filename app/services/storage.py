@@ -2,6 +2,7 @@ from io import BytesIO
 
 from flask import current_app
 from minio import Minio
+from urllib3 import PoolManager, Retry, Timeout
 
 
 class StorageService:
@@ -12,6 +13,10 @@ class StorageService:
             secret_key=current_app.config["MINIO_SECRET_KEY"],
             secure=current_app.config["MINIO_SECURE"],
             region=current_app.config["MINIO_REGION"],
+            http_client=PoolManager(
+                timeout=Timeout(connect=5, read=20),
+                retries=Retry(total=1, connect=1, read=1, status=0, backoff_factor=0.25),
+            ),
         )
         self.bucket = current_app.config["MINIO_BUCKET_NAME"]
 

@@ -46,7 +46,8 @@ class Config:
     RATELIMIT_SWALLOW_ERRORS = True
     RATELIMIT_IN_MEMORY_FALLBACK_ENABLED = True
     CORS_ALLOWED_ORIGINS = split_origins(os.getenv("CORS_ORIGINS"))
-    MAX_CONTENT_LENGTH = 12 * 1024 * 1024
+    MAX_CONTENT_LENGTH = 32 * 1024 * 1024
+    MAX_IMAGE_INPUT_SIZE = 30 * 1024 * 1024
     MAX_IMAGE_SIZE = 5 * 1024 * 1024
     MAX_PDF_SIZE = 10 * 1024 * 1024
     MAX_IMAGE_PIXELS = 40_000_000
@@ -67,6 +68,7 @@ class Config:
     MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
     MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "")
     MAIL_SUPPRESS_SEND = False
+    MAIL_TIMEOUT = 10
     TRUST_PROXY = as_bool(os.getenv("TRUST_PROXY"), True)
     FORCE_HTTPS = as_bool(os.getenv("FORCE_HTTPS"), True)
 

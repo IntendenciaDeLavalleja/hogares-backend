@@ -3,14 +3,23 @@ import uuid
 from dataclasses import dataclass
 from io import BytesIO
 from pathlib import Path
+from threading import BoundedSemaphore
 
 from flask import current_app
 from PIL import Image, ImageOps, UnidentifiedImageError
+from pillow_heif import register_heif_opener
 from pypdf import PdfReader
+from pypdf.generic import ArrayObject, DictionaryObject
 from werkzeug.datastructures import FileStorage
 from werkzeug.utils import secure_filename
 
-IMAGE_MIME_TYPES = {"image/jpeg", "image/png", "image/webp"}
+register_heif_opener(thumbnails=False)
+_image_processing_slots = BoundedSemaphore(1)
+
+IMAGE_MIME_TYPES = {
+    "image/jpeg", "image/png", "image/webp", "image/heic", "image/heif",
+    "image/heic-sequence", "image/heif-sequence",
+}
 DOCUMENT_TYPES = {
     "applicant_id",
     "household_ids",
@@ -58,16 +67,27 @@ def _read_limited(upload: FileStorage, limit: int) -> bytes:
 
 
 def _process_image(upload: FileStorage) -> ProcessedDocument:
-    content = _read_limited(upload, current_app.config["MAX_IMAGE_SIZE"])
+    # Decode one large camera image at a time per worker, not once per HTTP thread.
+    with _image_processing_slots:
+        return _process_image_in_slot(upload)
+
+
+def _process_image_in_slot(upload: FileStorage) -> ProcessedDocument:
+    content = _read_limited(upload, current_app.config["MAX_IMAGE_INPUT_SIZE"])
     Image.MAX_IMAGE_PIXELS = current_app.config["MAX_IMAGE_PIXELS"]
     try:
         with Image.open(BytesIO(content)) as source:
+            if source.format not in {"JPEG", "PNG", "WEBP", "HEIF"}:
+                raise DocumentProcessingError("Formato no permitido. Use JPG, PNG, WebP, HEIC o PDF.")
             if source.width * source.height > current_app.config["MAX_IMAGE_PIXELS"]:
-                raise DocumentProcessingError("La imagen tiene dimensiones demasiado grandes.")
+                raise DocumentProcessingError(
+                    "La imagen supera los 40 megapíxeles. Reducí su resolución o adjuntala como PDF."
+                )
             source.verify()
         with Image.open(BytesIO(content)) as source:
-            image = ImageOps.exif_transpose(source)
-            image.thumbnail((1920, 1920), Image.Resampling.LANCZOS)
+            source.thumbnail((1920, 1920), Image.Resampling.LANCZOS)
+            ImageOps.exif_transpose(source, in_place=True)
+            image = source
             if image.mode not in {"RGB", "RGBA"}:
                 image = image.convert("RGBA" if "transparency" in image.info else "RGB")
             quality = 80
@@ -86,7 +106,9 @@ def _process_image(upload: FileStorage) -> ProcessedDocument:
             return ProcessedDocument(
                 result, original, stored, "image/webp", hashlib.sha256(result).hexdigest(), image.width, image.height
             )
-    except (UnidentifiedImageError, OSError, Image.DecompressionBombError) as exc:
+    except DocumentProcessingError:
+        raise
+    except (UnidentifiedImageError, OSError, ValueError, RuntimeError, Image.DecompressionBombError) as exc:
         raise DocumentProcessingError("El archivo no es una imagen válida o segura.") from exc
 
 
@@ -95,7 +117,7 @@ def _process_pdf(upload: FileStorage) -> ProcessedDocument:
     if not content.startswith(b"%PDF-"):
         raise DocumentProcessingError("El archivo no es un PDF válido.")
     try:
-        reader = PdfReader(BytesIO(content), strict=True)
+        reader = PdfReader(BytesIO(content), strict=False)
         if reader.is_encrypted:
             raise DocumentProcessingError("No se aceptan PDF protegidos con contraseña.")
         if len(reader.pages) < 1 or len(reader.pages) > 1000:
@@ -104,7 +126,15 @@ def _process_pdf(upload: FileStorage) -> ProcessedDocument:
         root = root_reference.get_object() if hasattr(root_reference, "get_object") else (root_reference or {})
         names_reference = root.get("/Names")
         names = names_reference.get_object() if hasattr(names_reference, "get_object") else (names_reference or {})
-        if root.get("/OpenAction") or root.get("/AA") or names.get("/JavaScript"):
+        open_action = root.get("/OpenAction")
+        if hasattr(open_action, "get_object"):
+            open_action = open_action.get_object()
+        # A local opening view is common in scanned/Office PDFs and does not execute code.
+        safe_open_action = (
+            isinstance(open_action, ArrayObject)
+            or (isinstance(open_action, DictionaryObject) and open_action.get("/S") == "/GoTo")
+        )
+        if (open_action and not safe_open_action) or root.get("/AA") or names.get("/JavaScript"):
             raise DocumentProcessingError("El PDF contiene acciones no permitidas.")
     except DocumentProcessingError:
         raise
@@ -124,11 +154,27 @@ def process_document(upload: FileStorage | None) -> ProcessedDocument:
     if upload is None or not upload.filename:
         raise DocumentProcessingError("Debe seleccionar un archivo.")
     media_type = (upload.mimetype or "").lower()
+    media_type = {"image/jpg": "image/jpeg", "image/pjpeg": "image/jpeg", "application/x-pdf": "application/pdf"}.get(
+        media_type, media_type
+    )
+    if media_type in {"", "application/octet-stream", "binary/octet-stream"}:
+        prefix = upload.stream.read(32)
+        upload.stream.seek(0)
+        if prefix.startswith(b"%PDF-"):
+            media_type = "application/pdf"
+        elif prefix.startswith((b"\xff\xd8\xff", b"\x89PNG\r\n\x1a\n")):
+            media_type = "image/jpeg"
+        elif prefix[:4] == b"RIFF" and prefix[8:12] == b"WEBP":
+            media_type = "image/webp"
+        elif prefix[4:8] == b"ftyp" and any(
+            brand in prefix[8:32] for brand in (b"heic", b"heix", b"hevc", b"hevx", b"mif1", b"msf1")
+        ):
+            media_type = "image/heif"
     if media_type in IMAGE_MIME_TYPES:
         return _process_image(upload)
     if media_type == "application/pdf":
         return _process_pdf(upload)
-    raise DocumentProcessingError("Formato no permitido. Use JPG, PNG, WebP o PDF.")
+    raise DocumentProcessingError("Formato no permitido. Use JPG, PNG, WebP, HEIC o PDF.")
 
 
 def object_key(application_id: str, document_type: str, media_type: str) -> str:

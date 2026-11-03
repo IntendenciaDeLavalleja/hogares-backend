@@ -14,10 +14,40 @@ from ..schemas import application_schema
 from ..services import EncryptionService, StorageService
 from ..services.captcha import create_captcha, verify_captcha
 from ..services.documents import DOCUMENT_TYPES, DocumentProcessingError, object_key, process_document
+from ..services.drafts import merge_draft_snapshot, validate_draft_snapshot
 from ..services.email import send_application_confirmation
 from ..services.requirements import required_document_types
 
 applications_bp = Blueprint("applications", __name__, url_prefix="/applications")
+
+
+def _draft_limit_key():
+    # Carrier NAT and schools share IPs; quotas belong to the opaque draft credential.
+    token = request.headers.get("X-Draft-Token", "")
+    return _hash_token(token) if token else f"ip:{request.remote_addr}"
+
+
+def _save_snapshot(application, changes):
+    snapshot = merge_draft_snapshot(EncryptionService.decrypt(application.payload_encrypted), changes)
+    application.payload_encrypted = EncryptionService.encrypt(snapshot)
+    selected = snapshot.get("request", {})
+    application.home = selected.get("home") if selected.get("home") in {"minas", "mariscala", "montevideo"} else None
+    application.application_type = selected.get("type") if selected.get("type") in {"new", "renewal"} else None
+
+
+def _draft_response(application):
+    response = {
+        "id": application.id,
+        "status": application.status,
+        "expiresAt": application.expires_at.isoformat() + "Z",
+        "updatedAt": application.updated_at.isoformat() + "Z",
+        "documents": [document.to_dict() for document in application.documents],
+        "trackingCode": application.tracking_code,
+        "data": EncryptionService.decrypt(application.payload_encrypted),
+    }
+    if application.status == "submitted":
+        response.update(_submission_receipt(application))
+    return response
 
 
 @applications_bp.get("/institution")
@@ -81,7 +111,7 @@ def _send_confirmation(application_id):
 
 
 @applications_bp.get("/drafts/<application_id>/captcha")
-@limiter.limit("60 per hour")
+@limiter.limit("120 per hour", key_func=_draft_limit_key)
 def confirmation_captcha(application_id):
     application, error = _get_authorized_draft(application_id)
     if error:
@@ -92,12 +122,19 @@ def confirmation_captcha(application_id):
 
 
 @applications_bp.post("/drafts")
-@limiter.limit("5 per hour; 20 per day")
+@limiter.limit("60 per hour; 300 per day")
 def create_draft():
+    snapshot = None
+    if request.content_length:
+        if not request.is_json:
+            return jsonify({"error": "El contenido debe ser application/json."}), 415
+        snapshot = validate_draft_snapshot(request.get_json(silent=False))
     token = _draft_token()
     expires_at = utcnow() + timedelta(days=current_app.config["DRAFT_TTL_DAYS"])
     application = Application(draft_token_hash=_hash_token(token), expires_at=expires_at)
     try:
+        if snapshot is not None:
+            _save_snapshot(application, snapshot)
         db.session.add(application)
         db.session.commit()
     except SQLAlchemyError:
@@ -108,24 +145,38 @@ def create_draft():
 
 
 @applications_bp.get("/drafts/<application_id>")
-@limiter.limit("60 per hour")
+@limiter.limit("600 per hour", key_func=_draft_limit_key)
 def get_draft(application_id: str):
     application, error = _get_authorized_draft(application_id)
     if error:
         return error
-    return jsonify(
-        {
-            "id": application.id,
-            "status": application.status,
-            "expiresAt": application.expires_at.isoformat() + "Z",
-            "documents": [document.to_dict() for document in application.documents],
-            "trackingCode": application.tracking_code,
-        }
-    )
+    return jsonify(_draft_response(application))
+
+
+@applications_bp.put("/drafts/<application_id>")
+@limiter.limit("1800 per hour; 5000 per day", key_func=_draft_limit_key)
+def save_draft(application_id: str):
+    application, error = _get_authorized_draft(application_id, lock=True)
+    if error:
+        return error
+    if application.status != "draft":
+        return jsonify({"error": "La solicitud ya fue enviada y no admite cambios."}), 409
+    if not request.is_json:
+        return jsonify({"error": "El contenido debe ser application/json."}), 415
+    snapshot = validate_draft_snapshot(request.get_json(silent=False))
+    try:
+        _save_snapshot(application, snapshot)
+        application.updated_at = utcnow()
+        db.session.commit()
+    except SQLAlchemyError:
+        db.session.rollback()
+        current_app.logger.exception("No se pudo guardar el avance de la solicitud.")
+        return jsonify({"error": "No se pudo guardar el avance. Intentá nuevamente."}), 503
+    return jsonify(_draft_response(application))
 
 
 @applications_bp.post("/drafts/<application_id>/documents")
-@limiter.limit("40 per hour; 100 per day")
+@limiter.limit("120 per hour; 300 per day", key_func=_draft_limit_key)
 def upload_document(application_id: str):
     application, error = _get_authorized_draft(application_id)
     if error:
@@ -149,8 +200,9 @@ def upload_document(application_id: str):
         application_id=application.id, document_type=document_type
     ).one_or_none()
     old_key = old_document.object_key if old_document else None
-    storage = StorageService()
+    storage = None
     try:
+        storage = StorageService()
         encrypted_content = EncryptionService.encrypt_file(processed.content)
         storage.put(new_key, encrypted_content)
         document = old_document or ApplicationDocument(application_id=application.id, document_type=document_type)
@@ -167,7 +219,8 @@ def upload_document(application_id: str):
     except SQLAlchemyError:
         db.session.rollback()
         try:
-            storage.remove(new_key)
+            if storage is not None:
+                storage.remove(new_key)
         except Exception:
             current_app.logger.exception("No se pudo compensar un archivo luego de un fallo de base de datos.")
         current_app.logger.exception("No se pudo registrar el documento.")
@@ -186,7 +239,7 @@ def upload_document(application_id: str):
 
 
 @applications_bp.post("/drafts/<application_id>/submit")
-@limiter.limit("10 per hour; 20 per day")
+@limiter.limit("30 per hour; 100 per day", key_func=_draft_limit_key)
 def submit_draft(application_id: str):
     application, error = _get_authorized_draft(application_id, lock=True)
     if error:

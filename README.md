@@ -20,10 +20,22 @@ Este repositorio contiene el backend en la raíz: no configurar un subdirectorio
 
 ## Flujo público
 
-1. `POST /api/applications/drafts` crea un borrador y devuelve un token opaco.
+1. `POST /api/applications/drafts` crea un borrador y devuelve un token opaco; admite el formulario parcial como JSON.
 2. `POST /api/applications/drafts/:id/documents` sube cada documento con `X-Draft-Token`.
 3. `POST /api/applications/drafts/:id/submit` valida datos y documentos y finaliza la solicitud.
 4. `GET /api/applications/receipts/:code` permite recuperar el comprobante con el mismo token.
+
+`PUT /api/applications/drafts/:id`, con `X-Draft-Token`, guarda el avance parcial cifrado sin enviarlo.
+Los campos todavía vacíos no bloquean el guardado; el envío final conserva la validación completa.
+`GET /api/applications/drafts/:id` devuelve `data` y la lista real de documentos almacenados. Si el
+envío ya se confirmó, incluye `submittedAt` y `confirmationEmailSent` para recuperar el comprobante
+después de una interrupción de red. Los borradores con fotos siguen siendo borradores hasta el envío.
+
+Se aceptan imágenes JPG, PNG, WebP y HEIC/HEIF de hasta 30 MB de origen y 40 megapíxeles,
+convertidas y saneadas a WebP de hasta 5 MB; los PDF pueden tener hasta 10 MB. El tamaño máximo
+HTTP es 32 MB. Los MIME vacíos o genéricos de móviles se resuelven por contenido y luego se validan.
+Las cuotas de adjuntos, guardado, captcha y envío se asignan al token de borrador; las familias
+con una IP compartida no consumen la misma cuota de documentos. MinIO y SMTP usan timeouts finitos.
 
 ### Confirmación y seguimiento
 
