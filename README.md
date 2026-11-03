@@ -92,8 +92,8 @@ revoca la cookie en Redis; desactivar una cuenta o cambiar su contraseña invali
 Cuando desarrollo usa `memory://`, la revocación usa almacenamiento en memoria con vencimiento,
 igual en ejecución normal y en pruebas. Ese almacenamiento dura lo que dure el proceso;
 producción exige Redis para compartir y conservar las revocaciones entre procesos.
-En desarrollo HTTP usar `FORCE_HTTPS=false`; en producción HTTPS mantenerlo en `true`
-para exigir HTTPS y cookies Secure.
+En desarrollo HTTP usar `FORCE_HTTPS=false`. En Coolify, usar `FORCE_HTTPS=false` y
+`SESSION_COOKIE_SECURE=true`: el proxy exige HTTPS y el healthcheck interno usa HTTP.
 
 | Ruta | Función | Acceso |
 | --- | --- | --- |
