@@ -5,6 +5,7 @@ from datetime import timedelta
 
 from flask import Blueprint, current_app, jsonify, request
 from marshmallow import ValidationError
+from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
 from ..extensions import db, limiter
@@ -26,9 +27,13 @@ def _draft_limit_key():
     token = request.headers.get("X-Draft-Token", "")
     application_id = (request.view_args or {}).get("application_id", "")
     if token and len(token) <= 128 and application_id and len(application_id) <= 36:
-        application = db.session.get(Application, application_id)
         token_hash = _hash_token(token)
-        if application is not None and hmac.compare_digest(application.draft_token_hash, token_hash):
+        # Do not leave a request-session snapshot open before a later SELECT FOR UPDATE.
+        with db.engine.connect() as connection:
+            stored_hash = connection.execute(
+                select(Application.draft_token_hash).where(Application.id == application_id)
+            ).scalar_one_or_none()
+        if stored_hash is not None and hmac.compare_digest(stored_hash, token_hash):
             return token_hash
     return f"ip:{request.remote_addr}"
 
@@ -97,6 +102,8 @@ def _submission_receipt(application):
 
 def _send_confirmation(application_id):
     # Serialize delivery/retries so concurrent requests don't send the same confirmation twice.
+    # Both callers have already committed submission or only read its status. Start a fresh lock read.
+    db.session.rollback()
     application = db.session.get(Application, application_id, with_for_update=True, populate_existing=True)
     if application.confirmation_email_sent_at:
         db.session.commit()
@@ -189,6 +196,9 @@ def upload_document(application_id: str):
         return error
     if application.status != "draft":
         return jsonify({"error": "La solicitud ya fue enviada y no admite cambios."}), 409
+    # Authorization is read-only. Release its MariaDB snapshot/connection before processing or MinIO.
+    # Using that old snapshot after an autosave can raise MariaDB error 1020 when locking the row.
+    db.session.rollback()
     document_type = request.form.get("type", "").strip()
     if document_type == "good_conduct":
         return jsonify(
@@ -201,7 +211,7 @@ def upload_document(application_id: str):
     except DocumentProcessingError as exc:
         return jsonify({"error": str(exc)}), 422
 
-    new_key = object_key(application.id, document_type, processed.media_type)
+    new_key = object_key(application_id, document_type, processed.media_type)
     old_key = None
     storage = None
     try:
@@ -209,14 +219,16 @@ def upload_document(application_id: str):
         encrypted_content = EncryptionService.encrypt_file(processed.content)
         storage.put(new_key, encrypted_content)
         # Keep processing/storage outside the row lock, then serialize the final mutation with submit.
-        application = db.session.get(Application, application_id, with_for_update=True, populate_existing=True)
-        if application is None or application.status != "draft":
+        application, authorization_error = _get_authorized_draft(application_id, lock=True)
+        if authorization_error or application.status != "draft":
             db.session.rollback()
             try:
                 storage.remove(new_key)
             except Exception:
                 current_app.logger.exception("No se pudo limpiar un archivo recibido después del envío.")
-            return jsonify({"error": "La solicitud ya fue enviada y no admite cambios."}), 409
+            return authorization_error or (
+                jsonify({"error": "La solicitud ya fue enviada y no admite cambios."}), 409
+            )
         old_document = ApplicationDocument.query.filter_by(
             application_id=application.id, document_type=document_type
         ).with_for_update().one_or_none()

@@ -323,6 +323,20 @@ def test_verified_tokens_have_distinct_quotas_and_cannot_be_reused_for_other_dra
         assert _draft_limit_key() == "ip:203.0.113.4"
 
 
+def test_rate_credential_lookup_does_not_leave_a_request_transaction_open(app, client):
+    from app.api.applications import _draft_limit_key
+
+    draft = create_draft(client)
+    db.session.rollback()
+    with app.test_request_context(
+        f"/api/applications/drafts/{draft['id']}/documents", method="POST",
+        headers={"X-Draft-Token": draft["token"]},
+    ):
+        assert not db.session().in_transaction()
+        assert not _draft_limit_key().startswith("ip:")
+        assert not db.session().in_transaction()
+
+
 def test_hidden_stale_values_do_not_prevent_final_validation(payload):
     previous = deepcopy(payload)
     payload["request"].update(renewalYear=9999, sameHome=True)

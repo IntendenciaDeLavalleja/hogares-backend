@@ -6,6 +6,18 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    services:
+      mariadb:
+        image: mariadb:12.1
+        env:
+          MARIADB_ROOT_PASSWORD: native-regression-ci-only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
@@ -18,6 +30,8 @@ jobs:
       - run: pip install -r requirements-dev.txt
       - run: ruff check app tests scripts
       - run: pytest
+        env:
+          MARIADB_TEST_URL: mariadb+mariadbconnector://root:native-regression-ci-only@127.0.0.1:3306
       # El aviso usa rangos de Connector/C 3.x sobre el paquete Python 1.x.
       # Docker exige los paquetes Debian corregidos; ver docs/COOLIFY.md.
       - run: pip-audit -r requirements.txt --ignore-vuln PYSEC-2026-217

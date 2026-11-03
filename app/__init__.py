@@ -102,6 +102,16 @@ def create_app(config_class=Config, config_overrides: dict | None = None) -> Fla
         response.headers["X-Request-ID"] = getattr(g, "request_id", "")
         response.headers["Cache-Control"] = "no-store"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        if response.status_code >= 500 and request.path.startswith(("/api/", "/auth/")):
+            # Correlate handled failures as well as tracebacks, without logging
+            # tokens, form values, or identifiers embedded in the request URL.
+            app.logger.error(
+                "Petición fallida. method=%s route=%s status=%s request_id=%s",
+                request.method,
+                request.url_rule.rule if request.url_rule else "unknown",
+                response.status_code,
+                getattr(g, "request_id", "unknown"),
+            )
         return response
 
     @app.errorhandler(RateLimitExceeded)

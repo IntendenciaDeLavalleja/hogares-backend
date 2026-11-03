@@ -89,6 +89,21 @@ No otorga acceso al panel ni reemplaza los tokens o el control de autorización.
 Respaldar DB, MinIO y claves antes de actualizar. Programar `flask cleanup-drafts --limit 500`
 diariamente. Los contenedores no necesitan persistir archivos locales; los datos están en DB/MinIO.
 
+### Diagnóstico de las cargas y regresión de concurrencia
+
+El parche del 3 de noviembre identifica su ejecución con `X-App-Release: 2026-11-03.2` en
+`GET /health/live`. Esto permite verificar el despliegue sin crear inscripciones de prueba en producción.
+Un readiness correcto verifica lectura SQL y disponibilidad de los servicios; no sustituye las pruebas
+de escritura y concurrencia. Los fallos de API registran método, plantilla de ruta, estado y `request_id`;
+la misma referencia se devuelve en `X-Request-ID` y se muestra ante errores de servidor en el formulario.
+
+CI ejecuta `tests/test_mariadb_concurrency.py` con MariaDB 12.1 y el driver `mariadbconnector`.
+La prueba intercala guardados reales entre la autorización de una carga y su registro final. Para
+ejecutarla localmente, definir `MARIADB_TEST_URL` con una conexión nativa a un servidor de pruebas
+en localhost, cuyo usuario pueda crear y eliminar bases de datos. La prueba crea un esquema
+`hogares_test_<UUID>` exclusivo y elimina únicamente ese esquema al terminar. No usar credenciales
+de producción. SQLite no reproduce el error de concurrencia 1020 de MariaDB.
+
 ## Referencias
 
 ### Verificación de MariaDB Connector/C

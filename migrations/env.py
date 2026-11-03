@@ -4,7 +4,7 @@ from alembic import context
 from flask import current_app
 
 config = context.config
-fileConfig(config.config_file_name)
+fileConfig(config.config_file_name, disable_existing_loggers=False)
 config.set_main_option("sqlalchemy.url", str(current_app.extensions["migrate"].db.engine.url).replace("%", "%%"))
 target_metadata = current_app.extensions["migrate"].db.metadata
 

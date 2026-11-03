@@ -1,3 +1,4 @@
+import hashlib
 import uuid
 from datetime import UTC, datetime
 
@@ -80,5 +81,7 @@ class ApplicationDocument(db.Model):
             "size": self.size_bytes,
             "width": self.width,
             "height": self.height,
+            "revision": hashlib.sha256(self.object_key.encode()).hexdigest(),
+            "updatedAt": self.updated_at.isoformat(timespec="microseconds") + "Z" if self.updated_at else None,
             "status": "uploaded",
         }

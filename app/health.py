@@ -10,7 +10,10 @@ health_bp = Blueprint("health", __name__)
 @health_bp.get("/health/live")
 @limiter.exempt
 def live():
-    return jsonify({"status": "ok"})
+    response = jsonify({"status": "ok"})
+    # Identifies this incident fix without testing writes against live applications.
+    response.headers["X-App-Release"] = "2026-11-03.2"
+    return response
 
 
 @health_bp.get("/health/ready")
