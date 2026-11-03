@@ -22,9 +22,15 @@ applications_bp = Blueprint("applications", __name__, url_prefix="/applications"
 
 
 def _draft_limit_key():
-    # Carrier NAT and schools share IPs; quotas belong to the opaque draft credential.
+    # Only verified credentials get their own quota; random tokens must share the IP limit.
     token = request.headers.get("X-Draft-Token", "")
-    return _hash_token(token) if token else f"ip:{request.remote_addr}"
+    application_id = (request.view_args or {}).get("application_id", "")
+    if token and len(token) <= 128 and application_id and len(application_id) <= 36:
+        application = db.session.get(Application, application_id)
+        token_hash = _hash_token(token)
+        if application is not None and hmac.compare_digest(application.draft_token_hash, token_hash):
+            return token_hash
+    return f"ip:{request.remote_addr}"
 
 
 def _save_snapshot(application, changes):
@@ -65,7 +71,7 @@ def _draft_token() -> str:
 
 
 def _get_authorized_draft(application_id: str, *, lock=False) -> tuple[Application | None, tuple | None]:
-    application = db.session.get(Application, application_id, with_for_update=lock)
+    application = db.session.get(Application, application_id, with_for_update=lock, populate_existing=lock)
     if application is None:
         return None, (jsonify({"error": "Borrador no encontrado."}), 404)
     token = request.headers.get("X-Draft-Token", "")
@@ -196,15 +202,25 @@ def upload_document(application_id: str):
         return jsonify({"error": str(exc)}), 422
 
     new_key = object_key(application.id, document_type, processed.media_type)
-    old_document = ApplicationDocument.query.filter_by(
-        application_id=application.id, document_type=document_type
-    ).one_or_none()
-    old_key = old_document.object_key if old_document else None
+    old_key = None
     storage = None
     try:
         storage = StorageService()
         encrypted_content = EncryptionService.encrypt_file(processed.content)
         storage.put(new_key, encrypted_content)
+        # Keep processing/storage outside the row lock, then serialize the final mutation with submit.
+        application = db.session.get(Application, application_id, with_for_update=True, populate_existing=True)
+        if application is None or application.status != "draft":
+            db.session.rollback()
+            try:
+                storage.remove(new_key)
+            except Exception:
+                current_app.logger.exception("No se pudo limpiar un archivo recibido después del envío.")
+            return jsonify({"error": "La solicitud ya fue enviada y no admite cambios."}), 409
+        old_document = ApplicationDocument.query.filter_by(
+            application_id=application.id, document_type=document_type
+        ).with_for_update().one_or_none()
+        old_key = old_document.object_key if old_document else None
         document = old_document or ApplicationDocument(application_id=application.id, document_type=document_type)
         document.object_key = new_key
         document.original_name = processed.original_name

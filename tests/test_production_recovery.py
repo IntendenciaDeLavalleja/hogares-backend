@@ -215,6 +215,34 @@ def test_failed_replacement_keeps_existing_document_and_cors(client, memory_stor
     assert saved["documents"][0]["id"] == first["id"] and saved["documents"][0]["name"] == "original.pdf"
 
 
+def test_upload_finishing_after_submission_cannot_replace_a_confirmed_document(client, memory_storage, monkeypatch):
+    draft = create_draft(client)
+    first = upload(client, draft, pdf_file(), "original.pdf", "application/pdf").json["document"]
+    original_document = db.session.get(ApplicationDocument, first["id"])
+    original_key = original_document.object_key
+    original_content = memory_storage.objects[original_key]
+    new_objects = []
+
+    def store_then_submit(_self, key, content):
+        memory_storage.objects[key] = content
+        new_objects.append(key)
+        application = db.session.get(Application, draft["id"])
+        application.status = "submitted"
+        application.submitted_at = utcnow()
+        application.tracking_code = "HE26-CONFIRMED"
+        db.session.commit()
+
+    monkeypatch.setattr(memory_storage, "put", store_then_submit)
+    response = upload(client, draft, pdf_file(), "replacement.pdf", "application/pdf")
+    assert response.status_code == 409
+    assert response.headers["Access-Control-Allow-Origin"] == ORIGIN
+    saved = db.session.get(ApplicationDocument, first["id"])
+    assert saved.object_key == original_key and saved.original_name == "original.pdf"
+    assert memory_storage.objects[original_key] == original_content
+    assert all(key not in memory_storage.objects for key in new_objects)
+    assert db.session.get(Application, draft["id"]).status == "submitted"
+
+
 def test_storage_configuration_error_is_recoverable_json(client, monkeypatch):
     from app.api import applications
 
@@ -258,6 +286,41 @@ def test_shared_mobile_ip_does_not_share_document_quota_between_drafts(client):
 def test_shared_mobile_ip_can_start_more_than_five_families(client):
     for _attempt in range(6):
         assert client.post("/api/applications/drafts").status_code == 201
+
+
+def test_random_invalid_tokens_share_one_ip_rate_limit_key(app, client):
+    from app.api.applications import _draft_limit_key
+
+    draft = create_draft(client)
+    keys = []
+    for token in [None, "random-one", "random-two", "x" * 200]:
+        headers = {"X-Draft-Token": token} if token is not None else {}
+        with app.test_request_context(
+            f"/api/applications/drafts/{draft['id']}/documents", method="POST", headers=headers,
+            environ_base={"REMOTE_ADDR": "203.0.113.4"},
+        ):
+            keys.append(_draft_limit_key())
+    assert keys == ["ip:203.0.113.4"] * 4
+
+
+def test_verified_tokens_have_distinct_quotas_and_cannot_be_reused_for_other_drafts(app, client):
+    from app.api.applications import _draft_limit_key
+
+    first, second = create_draft(client), create_draft(client)
+    keys = []
+    for draft in [first, second]:
+        with app.test_request_context(
+            f"/api/applications/drafts/{draft['id']}/documents", method="POST",
+            headers={"X-Draft-Token": draft["token"]}, environ_base={"REMOTE_ADDR": "203.0.113.4"},
+        ):
+            keys.append(_draft_limit_key())
+    assert keys[0] != keys[1]
+    assert all(not key.startswith("ip:") for key in keys)
+    with app.test_request_context(
+        f"/api/applications/drafts/{second['id']}/documents", method="POST",
+        headers={"X-Draft-Token": first["token"]}, environ_base={"REMOTE_ADDR": "203.0.113.4"},
+    ):
+        assert _draft_limit_key() == "ip:203.0.113.4"
 
 
 def test_hidden_stale_values_do_not_prevent_final_validation(payload):
